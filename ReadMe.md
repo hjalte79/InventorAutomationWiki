@@ -13,6 +13,7 @@ Let’s make Inventor automation easier together!
 
 ## Tutorials
  *  [Extending iLogic functions with a dll](./DllForIlogic.md)
+ *  [Help: My addin won't load](./HelpMyAddinWontLoad.md)
 
 ## Refrences articles
  * [Installing Visual Studio](./InstallVS.md)

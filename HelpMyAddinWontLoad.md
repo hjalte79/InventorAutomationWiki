@@ -10,8 +10,8 @@ If your addin is not visible in the "Addin manager" then probably your addin fil
 | Acces | version dependicy | Path | 
 |---|---|---| 
 | All Users | Independent | %ALLUSERSPROFILE%\Autodesk\Inventor Addins\ | 
-| All Users | Dependent (< 2025) | %ALLUSERSPROFILE%\Autodesk\Inventor 20xx\Addins\  | 
-| All Users | Dependent (> 2025) | %PROGRAMFILES%\Autodesk\Inventor 20xx\Bin\Addins\ **(*)** | 
+| All Users | Dependent (<= 2024) | %ALLUSERSPROFILE%\Autodesk\Inventor 20xx\Addins\  | 
+| All Users | Dependent (>= 2025) | %PROGRAMFILES%\Autodesk\Inventor 20xx\Bin\Addins\ **(*)** | 
 | User-specific | Independent | %APPDATA%\Autodesk\ApplicationPlugins | 
 | User-specific | Dependent | %APPDATA%\Autodesk\Inventor 20xx\Addins\ |
 
