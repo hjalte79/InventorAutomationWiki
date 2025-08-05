@@ -51,7 +51,7 @@ In the addin file, it's possible to tell Inventor not to load your addin in some
 Check that your addin isn't excluded from loading based on the settings between the tags "SupportedSoftwareVersionGreaterThan"
 
 ## Project settings
-These settings are often hard to debug. And are often a problem when you finished creating your addin and it works perfectly on your PC but won't load on other computers. Al the checks in this chapter are related to the project settings. You can find the projects settings here:
+These settings are often hard to debug. And are often a problem when you finished creating your addin and it works perfectly on your PC but won't load on other computers. Most of the checks in this chapter are related to the project settings. You can find the projects settings here:
 
 ![Choose project properties](./images/ChooseProjectProperties.png)
 
@@ -79,6 +79,18 @@ Check the properties of the reference to the "Autodesk.Inventor.Interop.dll". If
 ### Check version: Autodesk.Inventor.Interop.dll
 Check the properties of the reference to the "Autodesk.Inventor.Interop.dll". An addin is always created with one specific version of the "Autodesk.Inventor.Interop.dll". Your users might use an older version of the dll. This might lead to problems. Especially if you did set the "Specific version" to true.
 
+### Incompatable packages
+Symptoms of this issue: 
+ - Your add-in doesn’t load
+ - No errors or messages are shown
+ - The add-in appears in Inventor’s Add-In Manager, but isn’t activated
+
+This usually means something is preventing Inventor from fully loading the add-in. A common cause is a conflict between a referenced package and the version of Inventor your user is running.
+
+This has become especially common in Inventor 2024 and newer, which use .NET Core 8.0 under the hood. Incompatible package versions, particularly default Microsoft System packages, can silently break your add-in.
+
+One frequent culprit is the System.Drawing.Common package. The latest version (e.g., 9.0.8) is not compatible with Inventor 2024+. Instead, you should use the most recent 8.x.x version to ensure compatibility. **For example, 8.0.19**
+ 
 ## Code checks
 ### Add messagebox to Activate methode
 In the code of your addin, you have a class that implements the interface "ApplicationAddInServer". Most likely the class is called "StandardAddInServer". That class has a method "Activate". This is the first method that is called by Inventor. For debugging reasons, you could add a message box to the first line of that method. If your addin gets loaded then you should see that messagebox while starting Inventor or when you load the addin using the "Addin manager". If you don't see the messagebox then there are problems with loading the dll. In that case, you don't have to look at your code (as long as it builds correctly.) You better check all your project settings again.
