@@ -16,6 +16,7 @@ Let’s make Inventor automation easier together!
 * [Extending iLogic functions with a DLL](./DllForIlogic.md)
 * [Help: My add-in won't load](./HelpMyAddinWontLoad.md)
 * [Debugging Multiple Inventor Versions in One Solution](./DebugMultiVersions.md)
+ * [Create an addin for Inventor 2025 and later](./CreateAddin2025AndLater.md)
 
 ## Reference Articles
 

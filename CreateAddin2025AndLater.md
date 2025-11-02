@@ -1,7 +1,9 @@
 # Creating an addin (Inventor 2025 and later)
 This tutorial is all about building your own Inventor add-in—completely from scratch. While there are plenty of tutorials out there (and even handy Visual Studio templates like the one from [Ekins Solutions](https://ekinssolutions.com/nifty_addin_template/). This guide takes a different approach.
 We won’t be using templates or shortcuts. Instead, we’ll manually set up everything. Why? Because I want to show you all the settings and configurations involved. This way, you’re not tied to specific defaults, Inventor or Visual Studio versions, or even a particular programming language.
-The goal is to give you a fully functional and useful add-in by the end of this tutorial. I also want you to be able to tweak and expand its functionality with ease. That said, I won’t spend too much time explaining what the add-in actually does. To keep things focused, I’ve chosen to convert my iLogic rule [“One Rule to Search Them All”](http://www.hjalte.nl/22-one-rule-to-search-them-all) into an add-in. If you're curious about the rule’s functionality, feel free to check out the blog post. Here, we’ll stay focused on the add-in creation process.
+The goal is to give you a fully functional and useful add-in by the end of this tutorial. I also want you to be able to tweak and expand its functionality with ease. That said, I won’t spend too much time explaining what the add-in actually does. To keep things focused, I’ve chosen to convert my iLogic rule [“One Rule to Search Them All”](http://www.hjalte.nl/22-one-rule-to-search-them-all) 
+
+into an add-in. If you're curious about the rule’s functionality, feel free to check out the blog post. Here, we’ll stay focused on the add-in creation process.
 Now, you might be wondering: if iLogic already lets you create buttons for rules, why bother with add-ins?
 Here’s when I usually go for an add-in:
 
@@ -16,6 +18,7 @@ One last thing: this isn’t a beginner programming tutorial. I’m assuming you
 Start with [creating a new project.](./CreatNewProject.md)
 
 Go to the “Add Project Reference...” screen.
+
 ![Add project reference](./images/AddProjectReference.png)
 
 Browse and select the following files:
@@ -108,6 +111,7 @@ In this new profile, you can add the path to Inventor.
 For the next files, you will need a GUID. This is an identification string used by Inventor. Multiple sites and tools can generate it for you. I usually use this site: [https://www.guidgenerator.com/](https://www.guidgenerator.com/)
 
 Save the string for later use.
+
 ![Site screen shot](./images/GUID.png)
 
 # Addin file
