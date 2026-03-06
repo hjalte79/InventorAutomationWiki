@@ -392,11 +392,13 @@ End Function
 ```
 
 ## Execution Is Faster When the Mouse Is Moving
-One of the strangest performance quirks you may encounter while developing Inventor add-ins is that your code appears to run faster when you move the mouse over the Inventor window. As odd as it sounds, this behavior is real and stems from how Inventor handles external API calls. 
-Inventor processes both UI events and COM API calls on a single main thread, meaning that when the UI is idle, Inventor polls for incoming API requests less frequently. Moving the mouse artificially increases UI activity, which forces Inventor to process its message queue more often—resulting in your automation code executing noticeably faster. According to [some sources](https://forums.autodesk.com/t5/inventor-programming-forum/why-execution-is-faster-when-mouse-moving-on-screen/td-p/8792842), the solution is to temporarily disable UI interaction, which allows Inventor to give full attention to API calls and removes the dependency on accidental mouse movement. This can be accomplished by setting these options:
 
+One of the strangest performance quirks you may encounter when developing Inventor add‑ins is that your code sometimes runs faster when you move the mouse over the Inventor window. As odd as it sounds, this effect is real. Inventor processes UI events and COM API calls on the same main thread, and when the UI is idle, Inventor polls for external API calls less frequently. Moving the mouse generates constant UI activity, which forces Inventor to process its message queue more often, and your automation code speeds up as a side effect.
+
+[some sources](https://forums.autodesk.com/t5/inventor-programming-forum/why-execution-is-faster-when-mouse-moving-on-screen/td-p/8792842) suggest that the solution is to temporarily disable UI interaction, allowing Inventor to focus entirely on processing API calls:
 ```vb.net
 ThisApplication.UserInterfaceManager.UserInteractionDisabled = True
 
 ThisApplication.DrawingOptions.EnableBackgroundUpdates = False
 ```
+However, I haven’t been able to get these options working reliably in either iLogic or my own out‑of‑process [ILogicRuleTester](https://github.com/hjalte79/ILogicRuleTester). It’s possible that iLogic already applies similar settings internally, making additional toggles ineffective. It may also be that these flags simply don’t function the same way in out‑of‑process automation.
