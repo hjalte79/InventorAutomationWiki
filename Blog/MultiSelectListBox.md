@@ -1,4 +1,3 @@
-
 # MultiSelectListBox (based on iLogic's InputListBox)
 
 Just as the title indicates, there is a way to 'sort of' change the functionality of an InputListBox, so that you can select multiple items at once.  No more having to use a regular InputListBox within a loop, and only being able to select a single item each time until you escape the loop.
