@@ -1,5 +1,7 @@
-# Connecting Power Automate to the Vault REST API.
+# Using Vault rest API with Power Automate
+
 With the release of Vault 2025.2, Autodesk introduced [a new REST API](https://aps.autodesk.com/blog/become-early-adopter-new-vault-data-apis) for Vault. You can use Power Automate Desktop to interact with Vault through this API. In this post, I’ll walk you through how to trigger a custom job in the Vault job queue using Power Automate.
+Adding a custom job in this way is probably rarely useful but this post is meant as a proof of concept. In a follow up post I will do something more usefull and also more robust
 
 To get started, you’ll need the Vault server address. This is typically something like:
 > http://{yourvaultserver}/
@@ -13,7 +15,8 @@ Replace {yourvaultserver} with the actual server name shown on the Vault login s
 To begin working with the Vault REST API, every request must include a Bearer token for authentication. This means you’ll first need to authenticate with Vault to obtain that token.
 
 The best place to start is the “[Reference Guide](https://aps.autodesk.com/en/docs/vaultdataapi/v2/reference/http/ )”, which outlines the required steps and endpoints.
-To authenticate, send a POST request to the following endpoint:
+
+According to the reference guid we need to authenticate by sending a POST request to the following endpoint:
 
 > {VaultServerAddress}/AutodeskDM/Services/api/vault/v2/sessions
 
