@@ -45,5 +45,5 @@ AI is excellent at:
 - generating examples
 - reducing the frustration of the early learning curve
 
-
-
+## Makes AI getting a job harder
+Even if getting started is easyer the oppisit might also be true. Creating some  thing that works is easy. But creating some thing that you understand and can maintain could be much a chalange. In times without AI you would start as a junior software engineer. Over time you would get more experience and you would learn how to  write scalable and maintainable code. And if you where good enough you would become a software architect. Now with AI you almost dont write code any more and you should directly be a software architect. wich is hard especially if you dont get the experience from writing code your self.
