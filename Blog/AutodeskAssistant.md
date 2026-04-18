@@ -1,9 +1,10 @@
 # Autodesk Assistant in Inventor
 
+![](./images/Header/AutodeskAssistant.jpg)
 Autodesk recently released Inventor 2027. It is shipped with the Autodesk Assistant. It’s an add-in that ships with the product by default, but it’s not enabled out of the box. I was curious about what it can actually do. How helpful is it for day‑to‑day engineering work? And does it actually make modeling easier?
-I decided to enable it and simply start asking questions. No manuals, no assumptions, just a straightforward test to see how the Assistant responds. This article walks through that first experience—what worked, what didn’t, and what surprised me along the way.
+I decided to enable it and simply start asking questions. No manuals, no assumptions, just a straightforward test to see how the Assistant responds. This article walks through that first experience what worked, what didn’t, and what surprised me along the way.
 
-# What did work
+# The cool stuff
 
 I started by loading an example file and asked a very simple question:
 
@@ -34,7 +35,7 @@ After that, it returned more detailed information about the model.
 
 What stood out here is that the assistant appears to infer design intent. Some of these assumptions were surprisingly reasonable. While they are still just assumptions, the interpretation was better than I expected from a first iteration.
 
-# Expectations
+# Limits
 
 My main expectation was that the assistant would help with actual modeling tasks. Ideally, I imagined being able to create basic features through natural language commands. To test this, I started with a very simple request:
 
@@ -65,7 +66,7 @@ Second, the assistant openly shows its internal dialogue when communicating with
 
 At this point it was clear that my expectations were ahead of what the Assistant can currently do. It is not a modeling assistant in the sense of issuing geometry commands. Instead, it acts more like an intelligent inspector and helper.
 
-# iLogic
+## iLogic
 
 The second thing I hoped the assistant could help with was iLogic. Writing iLogic rules is powerful, but it can also be time‑consuming and error‑prone. So this felt like a perfect use case for an AI assistant.
 
@@ -87,10 +88,22 @@ However, while experimenting further, I discovered something important. Even tho
 
 The assistant is not an automation tool in the sense that it modifies your model or rules for you, but it can act as a code generator. This is especialy of value for users who do not write iLogic every day.
 
+# Futher
+
+Last week, during DevCon, I spoke with someone from Autodesk who had direct knowledge of the Autodesk Assistant. According to that conversation, it appears that the assistant may support connecting custom MCP servers. That opens up an interesting and potentially powerful direction.
+If it can be combined with the existing update_parameter tool, entirely new workflows become possible. In our own environment, for example, we already maintain a structured set of standardized parameters across all models. We also document our internal design standards and enforce parameter‑driven modeling wherever possible.
+Imagine an MCP server that exposes:
+- Descriptions of all standardized parameters we use
+- Knowledge about our internal design rules and conventions
+
+If the assistant has access to that information, it could theoretically understand which parameters should be changed for a given request, and why. A command such as “make this product 1000 mm longer” could then translate into updating the correct driving parameters, rather than blindly changing a single dimension.
+It would rely on explicit parameter descriptions and documented standards to determine what should change and what should not. That would effectively move the assistant from an inspector role into a controlled, standards‑aware configurator.
+At this point, this is still speculation. Still, the combination of structured parameters, documented standards, and an extensible assistant is intriguing. 
+
 
 # All tools I found
 
-To wrap things up, I attempted to map out all the MCP tools available to the assistant. At the time of writing, this list represents everything I could identify.
+To wrap things up, I attempted to map out all the local MCP tools available to the assistant. At the time of writing, this list represents everything I could identify. However, I'm sure that this list will grow fast.
 
 **ComponentTools**
 - **get_component_states** - Gets detailed state information for component occurrences in an Inventor assembly.
