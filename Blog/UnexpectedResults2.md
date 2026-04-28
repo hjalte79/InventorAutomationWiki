@@ -1,5 +1,7 @@
 # Unexpected results .5
 
+![](./images/Header/Unexpectedresults2.jpg)
+
 Last week we encountered an unexpected issue in one of our assemblies. It consists of two plates bolted together with a linear bolt pattern. During assembly, we found that the hole patterns did not align. By the final hole, the centerline mismatch had grown to 10 mm.
 
 At first, this appeared to be a typical modeling or constraint error. However, the actual root cause proved to be far more subtle.
