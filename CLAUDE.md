@@ -67,6 +67,7 @@ This is a community-driven documentation wiki for Autodesk Inventor automation. 
 - **RetrieveModelAnnotation.md**: Retrieving model annotations for drawing dimensions
 - **RuleOnlyOnce.md**: Running "Before Save" rule only once in assemblies
 - **SelectingDimensions.md**: Selecting dimensions (dimension line vs extension lines)
+- **SheetMetalDIvider.md**: Dividing a long flat pattern into stock sheets while avoiding cutouts
 - **StopLongRunningRule.md**: Stopping a long-running iLogic rule with progress bar
 - **Transactions.md**: Transactions for robust and fast rules
 - **UnexpectedResults.md**: Debugging unexpected results in iProperties

@@ -1,4 +1,5 @@
 # Sheetmetal divider
+[**Example file**](./files/Sheet%20divider.ipt)
 
 Sometimes a sheet metal part is longer than the stock sheets you have on hand. The fix is to split the flat pattern into multiple pieces, but each cut line has to miss the holes and cutouts in the part. This rule does that automatically. Given a list of available sheet sizes, it finds the combination of cuts with the least waste while keeping every cut clear of the cutouts.
 
