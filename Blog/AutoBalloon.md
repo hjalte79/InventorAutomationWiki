@@ -1,5 +1,22 @@
 # Auto balloon
 
+According to the Autodesk Inventor [help files](https://help.autodesk.com/view/INVNTOR/2021/ENU/?guid=GUID-840D9449-21B1-4049-9796-4C66042CBB24) (Inventor 2016):
+
+> Placement of automatic balloons was improved to optimize the balloon start points, and position and length of balloon leaders. 
+
+Based on practical use, the automatic balloon function can still produce a cluttered, web‑like result. This appears to stem from the fact that balloon placement is not primarily driven by the actual location of the referenced parts. Instead, the algorithm mainly distributes balloons evenly around the view boundary, maintaining equal spacing between balloons, with limited consideration of part proximity.
+
+To mitigate this, I developed a rule that places one balloon per unique part. The rule is structured in three steps:
+
+- **Selecting a representative curve per part**
+For each part, the curve closest to the view boundary is selected.
+- **Determining the target position of each balloon**
+Balloons are positioned around the outside of the view. The arrangement aims to limit overlap and reduce leader line crossings.
+- **Creating the balloons**
+The balloons are generated based on the selected curves and calculated target positions.
+
+
+
 ```vb.net
 Public Class ThisRule
 
@@ -15,14 +32,16 @@ Public Class ThisRule
         Dim sheet As Sheet = doc.ActiveSheet
         Dim view As DrawingView = sheet.DrawingViews.Item(1)
 
-        Dim assemblyDocument As AssemblyDocument = view.ReferencedDocumentDescriptor.ReferencedDocument
-        Dim assemblyFileName = assemblyDocument.FullFileName
-
-        Dim tagCurves = CollectLargestCurvePerFile(view)
+        Dim tagCurves = CollectClosestCurvePerFile(view)
         PlaceBalloons(doc, sheet, view, tagCurves)
     End Sub
 
-    Private Function CollectLargestCurvePerFile(view As DrawingView) As List(Of TagCurve)
+    Private Function CollectClosestCurvePerFile(view As DrawingView) As List(Of TagCurve)
+        Dim viewTop = view.Top
+        Dim viewBottom = view.Top - view.Height
+        Dim viewLeft = view.Left
+        Dim viewRight = view.Left + view.Width
+
         Dim byFile As New Dictionary(Of String, TagCurve)
 
         For Each curve As DrawingCurve In view.DrawingCurves.Cast(Of DrawingCurve)()
@@ -32,8 +51,14 @@ Public Class ThisRule
             Dim tagCurve As New TagCurve(curve)
             If tagCurve.Occ.OccurrencePath.Count > 2 Then Continue For
 
+            ' Closed curves (circles, ellipses) have no midpoint — fall back to the center.
+            Dim midPoint As Point2d = curve.MidPoint
+            If midPoint Is Nothing Then midPoint = curve.CenterPoint
+
+            tagCurve.DistanceToNearestViewEdge = MinDistanceToViewEdge(midPoint, viewTop, viewBottom, viewLeft, viewRight)
+
             Dim existing As TagCurve = Nothing
-            If Not byFile.TryGetValue(tagCurve.FileName, existing) OrElse tagCurve.SquaredSize > existing.SquaredSize Then
+            If Not byFile.TryGetValue(tagCurve.FileName, existing) OrElse tagCurve.DistanceToNearestViewEdge < existing.DistanceToNearestViewEdge Then
                 byFile(tagCurve.FileName) = tagCurve
             End If
         Next
@@ -41,26 +66,25 @@ Public Class ThisRule
         Return byFile.Values.ToList()
     End Function
 
+    Private Shared Function MinDistanceToViewEdge(midPoint As Point2d, top As Double, bottom As Double, left As Double, right As Double) As Double
+        Return Math.Min(
+            Math.Min(Math.Abs(top - midPoint.Y), Math.Abs(bottom - midPoint.Y)),
+            Math.Min(Math.Abs(left - midPoint.X), Math.Abs(right - midPoint.X))
+        )
+    End Function
+
     Private Sub PlaceBalloons(doc As DrawingDocument, sheet As Sheet, view As DrawingView, tagCurves As List(Of TagCurve))
         Dim transientGeom = ThisApplication.TransientGeometry
         Dim balloonDiameter = doc.StylesManager.ActiveStandardStyle.ActiveObjectDefaults.BalloonStyle.BalloonDiameter
-        Dim minimalDistanceBetweenBaloons = balloonDiameter
+        Dim minimalDistanceBetweenBaloons = balloonDiameter + 0.1
 
         Dim viewTop = view.Top
         Dim viewBottom = view.Top - view.Height
         Dim viewLeft = view.Left
         Dim viewRight = view.Left + view.Width
 
-        ' Tracks already-placed balloon centers along each view edge so we can
-        ' nudge new balloons sideways and avoid overlap. Top/Bottom store X
-        ' coordinates; Left/Right store Y coordinates.
-        Dim placed As New Dictionary(Of Edge, List(Of Double)) From {
-            {Edge.Top, New List(Of Double)},
-            {Edge.Bottom, New List(Of Double)},
-            {Edge.Left, New List(Of Double)},
-            {Edge.Right, New List(Of Double)}
-        }
-
+        ' Phase 1: assign each curve to its closest edge and compute the desired leader endpoint.
+        Dim placements As New List(Of Placement)
         For Each tagCurve As TagCurve In tagCurves
             ' Closed curves (circles, ellipses) have no midpoint — fall back to the center.
             Dim midPoint As Point2d = tagCurve.Curve.MidPoint
@@ -68,21 +92,71 @@ Public Class ThisRule
 
             Dim chosenEdge = ChooseClosestEdge(midPoint, viewTop, viewBottom, viewLeft, viewRight)
             Dim leader = ComputeLeaderPoint(chosenEdge, midPoint, viewTop, viewBottom, viewLeft, viewRight, balloonDiameter)
+            placements.Add(New Placement With {
+                .TagCurve = tagCurve,
+                .MidPoint = midPoint,
+                .ChosenEdge = chosenEdge,
+                .LeaderX = leader.X,
+                .LeaderY = leader.Y
+            })
+        Next
 
-            Dim alongEdge = placed(chosenEdge)
-            Dim leaderX = leader.X
-            Dim leaderY = leader.Y
-            If chosenEdge = Edge.Top OrElse chosenEdge = Edge.Bottom Then
-                leaderX = FindFreeSlot(leaderX, alongEdge, minimalDistanceBetweenBaloons)
-                alongEdge.Add(leaderX)
-            Else
-                leaderY = FindFreeSlot(leaderY, alongEdge, minimalDistanceBetweenBaloons)
-                alongEdge.Add(leaderY)
-            End If
+        ' Phase 2: per edge, sort by position along that edge, sweep forward to
+        ' enforce minimum spacing, then center each tight cluster so the cluster's
+        ' centroid matches the centroid of its desired positions. Order along the
+        ' edge is preserved either way, so leaders still don't cross.
+        For Each edgeGroup In placements.GroupBy(Function(p) p.ChosenEdge)
+            Dim isHorizontal = (edgeGroup.Key = Edge.Top OrElse edgeGroup.Key = Edge.Bottom)
+            Dim ordered = If(isHorizontal,
+                             edgeGroup.OrderBy(Function(p) p.LeaderX).ToList(),
+                             edgeGroup.OrderBy(Function(p) p.LeaderY).ToList())
 
+            Dim desired(ordered.Count - 1) As Double
+            For i = 0 To ordered.Count - 1
+                desired(i) = If(isHorizontal, ordered(i).LeaderX, ordered(i).LeaderY)
+            Next
+
+            Dim actual(ordered.Count - 1) As Double
+            Dim lastPlaced As Double = Double.MinValue
+            For i = 0 To ordered.Count - 1
+                actual(i) = Math.Max(desired(i), lastPlaced + minimalDistanceBetweenBaloons)
+                lastPlaced = actual(i)
+            Next
+
+            ' Walk forward and close out each cluster (consecutive balloons in tight
+            ' contact) by shifting it back so sum(actual) = sum(desired) within the
+            ' cluster.
+            Dim clusterStart = 0
+            For i = 1 To ordered.Count
+                If i = ordered.Count OrElse actual(i) - actual(i - 1) > minimalDistanceBetweenBaloons + 0.001 Then
+                    Dim sumActual As Double = 0
+                    Dim sumDesired As Double = 0
+                    For j = clusterStart To i - 1
+                        sumActual += actual(j)
+                        sumDesired += desired(j)
+                    Next
+                    Dim shift = (sumActual - sumDesired) / (i - clusterStart)
+                    For j = clusterStart To i - 1
+                        actual(j) -= shift
+                    Next
+                    clusterStart = i
+                End If
+            Next
+
+            For i = 0 To ordered.Count - 1
+                If isHorizontal Then
+                    ordered(i).LeaderX = actual(i)
+                Else
+                    ordered(i).LeaderY = actual(i)
+                End If
+            Next
+        Next
+
+        ' Phase 3: create balloons at the final positions.
+        For Each p In placements
             Dim leaderPoints = ThisApplication.TransientObjects.CreateObjectCollection()
-            leaderPoints.Add(transientGeom.CreatePoint2d(leaderX, leaderY))
-            leaderPoints.Add(sheet.CreateGeometryIntent(tagCurve.Curve, midPoint))
+            leaderPoints.Add(transientGeom.CreatePoint2d(p.LeaderX, p.LeaderY))
+            leaderPoints.Add(sheet.CreateGeometryIntent(p.TagCurve.Curve, p.MidPoint))
             sheet.Balloons.Add(leaderPoints)
         Next
     End Sub
@@ -105,33 +179,23 @@ Public Class ThisRule
     Private Shared Function ComputeLeaderPoint(edge As Edge, midPoint As Point2d, top As Double, bottom As Double, left As Double, right As Double, balloonDiameter As Double) As (X As Double, Y As Double)
         Select Case edge
             Case Edge.Top
-                Return (midPoint.X + balloonDiameter, top + balloonDiameter)
+                Return (midPoint.X + balloonDiameter / 2, top + balloonDiameter)
             Case Edge.Bottom
-                Return (midPoint.X + balloonDiameter, bottom - balloonDiameter)
+                Return (midPoint.X + balloonDiameter / 2, bottom - balloonDiameter)
             Case Edge.Left
-                Return (left - balloonDiameter, midPoint.Y + balloonDiameter)
+                Return (left - balloonDiameter, midPoint.Y + balloonDiameter / 2)
             Case Else ' Edge.Right
-                Return (right + balloonDiameter, midPoint.Y + balloonDiameter)
+                Return (right + balloonDiameter, midPoint.Y + balloonDiameter / 2)
         End Select
     End Function
 
-    ' Returns a position along an edge that is at least minDist away from every
-    ' already-placed balloon on that edge. Starts at the desired position and
-    ' spirals outward in both directions.
-    Private Shared Function FindFreeSlot(desired As Double, placed As List(Of Double), minDist As Double) As Double
-        If Not placed.Any(Function(p) Math.Abs(p - desired) < minDist) Then Return desired
-
-        Dim k As Integer = 1
-        Do
-            Dim candidatePos As Double = desired + k * minDist
-            If Not placed.Any(Function(p) Math.Abs(p - candidatePos) < minDist) Then Return candidatePos
-
-            Dim candidateNeg As Double = desired - k * minDist
-            If Not placed.Any(Function(p) Math.Abs(p - candidateNeg) < minDist) Then Return candidateNeg
-
-            k += 1
-        Loop
-    End Function
+    Private Class Placement
+        Public Property TagCurve As TagCurve
+        Public Property MidPoint As Point2d
+        Public Property ChosenEdge As Edge
+        Public Property LeaderX As Double
+        Public Property LeaderY As Double
+    End Class
 
     Public Class TagCurve
 
@@ -141,20 +205,11 @@ Public Class ThisRule
             EdgeProxy = drawingCurve.ModelGeometry
             Occ = EdgeProxy.ContainingOccurrence.OccurrencePath.Item(1)
             FileName = Occ.ReferencedFileDescriptor.FullFileName
-
-            CalculateSize()
         End Sub
 
         Public Property FileName As String
         Public ReadOnly Property Curve As DrawingCurve
-        Public Property SquaredSize As Double
-
-        Public Sub CalculateSize()
-            Dim rangeBox = Curve.Evaluator2D.RangeBox
-            Dim p1 = rangeBox.MinPoint
-            Dim p2 = rangeBox.MaxPoint
-            SquaredSize = (p1.X - p2.X) ^ 2 + (p1.Y - p2.Y) ^ 2
-        End Sub
+        Public Property DistanceToNearestViewEdge As Double
 
         Private ReadOnly EdgeProxy As EdgeProxy
         Public Occ As ComponentOccurrence
@@ -162,3 +217,53 @@ Public Class ThisRule
 
 End Class
 ```
+
+# How it works
+
+The entry point "Main()" grabs the active drawing, the active sheet, and the first drawing view. It asks `CollectClosestCurvePerFile` for the list of curves to tag, and hands that to `PlaceBalloons` for layout and creation.
+
+## `CollectClosestCurvePerFile`
+
+Loops over every drawing curve in the view and keeps **one** curve per unique referenced file.
+
+- Curves whose `ModelGeometry` is not an `EdgeProxy` are skipped. Only real model edges can be tagged.
+- Occurrences deeper than the first level of the assembly are skipped (`OccurrencePath.Count > 2`), so parts inside sub-assemblies are not balloon-tagged on their own.
+- For every candidate, the midpoint (or the center point for closed curves like circles) is measured against the four view edges. The shortest distance is stored on the `TagCurve` as `DistanceToNearestViewEdge`.
+- If a file has multiple candidate curves, the one closest to a view edge wins. That curve is the easiest to reach with a short, clean leader.
+
+## `MinDistanceToViewEdge`
+
+A small helper that returns the minimum of the four perpendicular distances from a point to the top, bottom, left, and right edges of the view.
+
+## `PlaceBalloons`: three phases
+
+This is the heart of the layout logic.
+
+**Phase 1: pick an edge and compute a desired leader endpoint.** For each tag curve, `ChooseClosestEdge` decides which of the four view edges is closest to the curve's midpoint. `ComputeLeaderPoint` then returns the desired leader endpoint just outside that edge, offset by one balloon diameter so the balloon clears the view. The chosen edge and desired endpoint are stored in a `Placement` record so they can be revisited in phase 2.
+
+**Phase 2: deconflict balloons along each edge.** Within each edge group, placements are sorted along the edge (by X for top/bottom, by Y for left/right). A forward sweep enforces the minimum spacing: every balloon is moved forward to at least `minimalDistanceBetweenBaloons` past the previous one if needed.
+
+The code then identifies *clusters*, runs of consecutive balloons that ended up tightly packed at the minimum spacing. For each cluster the whole run is shifted as a unit so the average actual position matches the average desired position. The order along the edge is preserved, so leader lines still do not cross, but the cluster stays centred over the parts it points to instead of drifting forward.
+
+**Phase 3: create the balloons.** For each `Placement`, an `ObjectCollection` is built containing the final leader endpoint and a `GeometryIntent` on the chosen drawing curve. `sheet.Balloons.Add(leaderPoints)` then creates the actual balloon on the sheet.
+
+> 💡 Building the leader as a collection of points and a `GeometryIntent` is the standard way to attach a balloon to model geometry rather than to a free point on the sheet. The balloon stays linked to the curve if the view is later moved.
+
+## `ChooseClosestEdge`
+
+Compares the four perpendicular distances from the curve midpoint to each edge of the view. It picks the better horizontal candidate (top vs. bottom) and the better vertical candidate (left vs. right), then returns whichever of those two is closer overall. Ties are resolved in favour of the vertical edge.
+
+## `ComputeLeaderPoint`
+
+Returns the point where the leader should terminate, just outside the chosen edge:
+
+- For top and bottom edges, the leader sits one full balloon diameter above or below the edge, with a small horizontal offset (`balloonDiameter / 2`) so the leader line is angled rather than perfectly vertical.
+- For left and right edges, the leader sits one full balloon diameter to the side of the edge, with a small vertical offset for the same reason.
+
+## `Placement` and `TagCurve`
+
+`Placement` is a private helper class that ties a tag curve together with its computed midpoint, chosen edge, and current leader position. It exists so phase 2 can mutate `LeaderX` and `LeaderY` while sorting and clustering without losing the link back to the original curve.
+
+`TagCurve` wraps a `DrawingCurve`, pulls out the first-level component occurrence and its referenced file name in the constructor, and exposes `DistanceToNearestViewEdge` so the collection step can compare candidate curves by how reachable they are.
+
+> ⚠️ This is a first draft. It assumes the first drawing view holds an assembly, only considers first-level occurrences, and does not yet sort balloons by part number or verify that the chosen edge curve is actually visible. Treat it as a starting point.
