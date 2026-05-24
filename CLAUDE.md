@@ -87,3 +87,7 @@ When editing or adding content:
 - Include relevant screenshots in the `images/` folder
 - Code examples should be in VB.NET (aligns with iLogic syntax) unless C# is specifically needed
 - Use callout boxes: `> 💡` for tips, `> ⚠️` for warnings, `> ❓` for explanations
+
+## Commit Messages
+
+Do not add a `Co-Authored-By: Claude` trailer to commit messages in this repository.
