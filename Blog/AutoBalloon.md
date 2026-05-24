@@ -1,7 +1,10 @@
-# Auto balloon
+# A different approach to auto balloon
+
 Inventor’s Auto Balloon tool is useful for generating balloons, but it is primarily designed as an interactive feature. In practice, this means working through a dialog, adjusting settings, and repeating those steps for each view.
 
 I built a iLogic rule that focuses on a different approach: a fast, single‑click action that produces a clean, predictable result without any dialog or manual tuning.
+
+![](./images/Header/AutoBalloon.jpg)
 
 This makes it practical not only for day‑to‑day work, but also for automated processes. Since the built‑in Auto Balloon function is not exposed through the API, having a scriptable alternative becomes especially useful in those scenarios.
 
