@@ -1,24 +1,14 @@
 # Auto balloon
+Inventor’s Auto Balloon tool is useful for generating balloons, but it is primarily designed as an interactive feature. In practice, this means working through a dialog, adjusting settings, and repeating those steps when you want consistent results across multiple drawings.
 
-According to the Autodesk Inventor [help files](https://help.autodesk.com/view/INVNTOR/2021/ENU/?guid=GUID-840D9449-21B1-4049-9796-4C66042CBB24) (Inventor 2016):
+For many workflows, that is where friction starts to build.
+To reduce that friction, I built a iLogic rule that focuses on a different approach: a fast, single‑click action that produces a clean, predictable result without any dialog or manual tuning.
 
-> Placement of automatic balloons was improved to optimize the balloon start points, and position and length of balloon leaders. 
+This makes it practical not only for day‑to‑day work, but also for automated processes, where repeatability and zero user interaction are essential. Since the built‑in Auto Balloon function is not exposed through the API, having a scriptable alternative becomes especially useful in those scenarios.
 
-In practical use, however, the automatic balloon function can still produce a cluttered, web‑like result. 
+The generated layout follows the same general idea as the default tool, with a few small adjustments to keep balloons closer to their parts and to maintain a structured result.
 
-![](./images/ImprovedAutoBalloon2016.png)
-
-This seems to be caused by the fact that balloon placement is not primarily driven by the actual location of the referenced parts. Instead, the algorithm mainly distributes balloons evenly around the view boundary, aiming for equal spacing between balloons, with only limited consideration of part proximity.
-
-To address this, I developed an iLogic rule that:
-- **Selecting a representative curve per part**
-For each part, the curve closest to the view boundary is selected.
-- **Determining the target position of each balloon**
-Balloons are positioned around the outside of the view. The arrangement aims to limit overlap and reduce leader line crossings.
-- **Creating the balloons**
-The balloons are generated based on the selected curves and calculated target positions.
-
-If these optimizations sound minor, that is a fair assessment. The main advantage, however, is **usability**: the rule requires a **single click**, rather than a dialog with numerous settings. In addition, there is no API for the built‑in auto‑balloon function, which makes it impossible to use in automated workflows. This is where the rule becomes practically useful.
+The individual improvements are modest. The main benefit is usability: a reliable, one‑click workflow that fits naturally into both manual use and automation.
 
 ![](./images/SIngleClickAutoBalloon.png)
 
@@ -30,8 +20,6 @@ Using the rule
  4. select a drawing view, and wait for placement to complete.
 
 Notes: Drawings with a large number of drawing curves may take longer because the rule evaluates candidate edges to find a clean attachment point per part. 
-
-A few weeks ago at DevCon, someone told me they knew my blog as “that blog with more code than text.” This post fits that description. (For those who do not know me: see my personal site at [hjalte.nl](http://www.hjalte.nl/).)
 
 A much more detailed explanation about the rule can be found under the iLogic rule.
 
@@ -48,7 +36,7 @@ Public Class ThisRule
     Sub Main()
         Dim doc As DrawingDocument = ThisDoc.Document
         Dim sheet As Sheet = doc.ActiveSheet
-        Dim view As DrawingView = sheet.DrawingViews.Item(1)
+        Dim view As DrawingView = ThisApplication.CommandManager.Pick(SelectionFilterEnum.kDrawingViewFilter, "Select a drawing view.")
 
         Dim tagCurves = CollectClosestCurvePerFile(view)
         PlaceBalloons(doc, sheet, view, tagCurves)
