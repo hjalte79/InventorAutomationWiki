@@ -4,10 +4,13 @@ According to the Autodesk Inventor [help files](https://help.autodesk.com/view/I
 
 > Placement of automatic balloons was improved to optimize the balloon start points, and position and length of balloon leaders. 
 
-Based on practical use, the automatic balloon function can still produce a cluttered, web‑like result. This appears to stem from the fact that balloon placement is not primarily driven by the actual location of the referenced parts. Instead, the algorithm mainly distributes balloons evenly around the view boundary, maintaining equal spacing between balloons, with limited consideration of part proximity.
+In practical use, however, the automatic balloon function can still produce a cluttered, web‑like result. 
 
-To mitigate this, I developed a rule that places one balloon per unique part. The rule is structured in three steps:
+![](./images/ImprovedAutoBalloon2016.png)
 
+This seems to be caused by the fact that balloon placement is not primarily driven by the actual location of the referenced parts. Instead, the algorithm mainly distributes balloons evenly around the view boundary, aiming for equal spacing between balloons, with only limited consideration of part proximity.
+
+To address this, I developed an iLogic rule that:
 - **Selecting a representative curve per part**
 For each part, the curve closest to the view boundary is selected.
 - **Determining the target position of each balloon**
@@ -15,7 +18,22 @@ Balloons are positioned around the outside of the view. The arrangement aims to 
 - **Creating the balloons**
 The balloons are generated based on the selected curves and calculated target positions.
 
+If these optimizations sound minor, that is a fair assessment. The main advantage, however, is **usability**: the rule requires a **single click**, rather than a dialog with numerous settings. In addition, there is no API for the built‑in auto‑balloon function, which makes it impossible to use in automated workflows. This is where the rule becomes practically useful.
 
+![](./images/SIngleClickAutoBalloon.png)
+
+Using the rule
+ 1. Copy the code into an external iLogic rule.
+ 2. (Optional) Add a ribbon button or shortcut to run it. Autodesk’s guide:
+    - [How to create a add the rule to Ribbon.](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-create-a-keyboard-shortcut-to-an-iLogic-rule-or-add-the-rule-to-Ribbon.html)
+ 3. Run the rule
+ 4. select a drawing view, and wait for placement to complete.
+
+Notes: Drawings with a large number of drawing curves may take longer because the rule evaluates candidate edges to find a clean attachment point per part. 
+
+A few weeks ago at DevCon, someone told me they knew my blog as “that blog with more code than text.” This post fits that description. (For those who do not know me: see my personal site at [hjalte.nl](http://www.hjalte.nl/).)
+
+A much more detailed explanation about the rule can be found under the iLogic rule.
 
 ```vb.net
 Public Class ThisRule
@@ -220,7 +238,7 @@ End Class
 
 # How it works
 
-The entry point "Main()" grabs the active drawing, the active sheet, and the first drawing view. It asks `CollectClosestCurvePerFile` for the list of curves to tag, and hands that to `PlaceBalloons` for layout and creation.
+The entry point "Main()" grabs the active drawing, the active sheet, and lets you select the drawing view. It asks `CollectClosestCurvePerFile` for the list of curves to tag, and hands that to `PlaceBalloons` for layout and creation.
 
 ## `CollectClosestCurvePerFile`
 
@@ -266,4 +284,3 @@ Returns the point where the leader should terminate, just outside the chosen edg
 
 `TagCurve` wraps a `DrawingCurve`, pulls out the first-level component occurrence and its referenced file name in the constructor, and exposes `DistanceToNearestViewEdge` so the collection step can compare candidate curves by how reachable they are.
 
-> ⚠️ This is a first draft. It assumes the first drawing view holds an assembly, only considers first-level occurrences, and does not yet sort balloons by part number or verify that the chosen edge curve is actually visible. Treat it as a starting point.
