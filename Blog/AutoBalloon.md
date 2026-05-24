@@ -20,8 +20,6 @@ Using the rule
 
 Notes: Drawings with a large number of drawing curves may take longer because the rule evaluates candidate edges to find a clean attachment point per part. 
 
-A much more detailed explanation about the rule can be found under the iLogic rule.
-
 ```vb.net
 Public Class ThisRule
 
