@@ -6,7 +6,7 @@ I built a iLogic rule that focuses on a different approach: a fast, single‑cli
 
 ![](./images/Header/AutoBalloon.jpg)
 
-This makes it practical not only for day‑to‑day work, but also for automated processes. Since the built‑in Auto Balloon function is not exposed through the API, having a scriptable alternative becomes especially useful in those scenarios.
+This makes it practical, not only for day‑to‑day work, but also for automated processes. Since the built‑in Auto Balloon function is not exposed through the API, having a scriptable alternative becomes especially useful in those scenarios.
 
 The generated layout follows the same general idea as the default tool, with a few small adjustments to keep balloons closer to their parts and to maintain a structured result.
 
@@ -17,7 +17,7 @@ The individual improvements are modest. The main benefit is usability: a reliabl
 Using the rule
  1. Copy the code into an external iLogic rule.
  2. (Optional) Add a ribbon button or shortcut to run it. Autodesk’s guide:
-    - [How to create a add the rule to Ribbon.](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-create-a-keyboard-shortcut-to-an-iLogic-rule-or-add-the-rule-to-Ribbon.html)
+    - [How to add a rule to the ribbon.](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-create-a-keyboard-shortcut-to-an-iLogic-rule-or-add-the-rule-to-Ribbon.html)
  3. Run the rule
  4. select a drawing view, and wait for placement to complete.
 
@@ -223,3 +223,10 @@ Public Class ThisRule
 
 End Class
 ```
+
+**Additional iLogic-based drawing automation tools:**
+
+- [Automatically generate overall dimensions](./generateOverallDimensions.md)
+- [Automatically generate hole position dimensions](./generateHolePosition.md)
+- [Automatically generate bend dimensions](./generateBendDimensions.md)
+- [Automatically generate bend notes](./GenerateBendNotes.md)
